@@ -26,23 +26,27 @@ type VJJudger struct {
 const VJToken = "VJ"
 
 var VJRes = map[string]int{"Waiting": 0,
+    "Pending":               1,
     "Compiling":             1,
-    "Running & Judging":     1,
-    "Compile Error":         2,
+    "Running":               1,
+    "Compilation Error":     2,
     "Accepted":              3,
     "Runtime Error":         4,
     "Wrong Answer":          5,
+    "Time Limit Exceed":     6,
     "Time Limit Exceeded":   6,
+    "Memory Limit Exceed":   7,
     "Memory Limit Exceeded": 7,
+    "Output Limit Exceed":   8,
     "Output Limit Exceeded": 8,
-    "Presentation Error":    9,
-    "System Error":          10}
+    "Presentation Error":    5,
+    "Submit Failed":         10}
 
 var VJLang = map[int]int{
     LanguageNA:   -1,
-    LanguageC:    1,
-    LanguageCPP:  0,
-    LanguageJAVA: 2}
+    LanguageC:    10,
+    LanguageCPP:  42,
+    LanguageJAVA: 36}
 
 func (h *VJJudger) Init(_ UserInterface) error {
     jar, _ := cookiejar.New(nil)
@@ -78,13 +82,10 @@ func (h *VJJudger) login() error {
 
     log.Println("vj login")
 
-    h.client.Get("http://acm.hust.edu.cn/vjudge/toIndex.action")
-
-    uv := url.Values{}
-    uv.Add("username", h.username)
-    uv.Add("password", h.userpass)
-
-    req, err := http.NewRequest("POST", "http://acm.hust.edu.cn/vjudge/user/login.action", strings.NewReader(uv.Encode()))
+    req, err := h.client.PostForm("http://acm.hust.edu.cn/vjudge/user/login.action", url.Values{
+        "username": {"vsake"},
+        "password": {"JC945312"},
+    })
     if err != nil {
         return BadInternet
     }
@@ -134,13 +135,13 @@ func (h *VJJudger) submit(u UserInterface) error {
 
     source := base64.StdEncoding.EncodeToString([]byte(sd))
 
-    uv.Add("problem_id", strconv.Itoa(u.GetVid()))
     uv.Add("language", strconv.Itoa(VJLang[u.GetLang()]))
     uv.Add("source", source)
+    uv.Add("isOpen", 0)
+    uv.Add("id", u.GetVid())
     uv.Add("submit", "Submit")
-    uv.Add("encoded", "1")
 
-    req, err := http.NewRequest("POST", "http://poj.org/submit", strings.NewReader(uv.Encode()))
+    req, err := http.NewRequest("POST", "http://acm.hust.edu.cn/vjudge/problem/submit.action", strings.NewReader(uv.Encode()))
     if err != nil {
         return BadInternet
     }
