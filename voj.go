@@ -13,6 +13,7 @@ import (
     "strconv"
     "strings"
     "time"
+    "fmt"
 )
 
 type VJJudger struct {
@@ -82,29 +83,21 @@ func (h *VJJudger) login() error {
 
     log.Println("vj login")
 
-    req, err := h.client.PostForm("http://acm.hust.edu.cn/vjudge/user/login.action", url.Values{
+    resp, err := h.client.PostForm("http://acm.hust.edu.cn/vjudge/user/login.action", url.Values{
         "username": {"vsake"},
         "password": {"JC945312"},
     })
     if err != nil {
         return BadInternet
     }
-
-    req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-    resp, err := h.client.Do(req)
-    if err != nil {
-        return BadInternet
-    }
     defer resp.Body.Close()
 
-    b, _ := ioutil.ReadAll(resp.Body)
-    html := string(b)
-    // log.Println(html)
-    if strings.Index(html, "Please retry after 100ms.Thank you.") >= 0 ||
-        strings.Index(html, h.username) < 0 {
-        return LoginFailed
-    }
+    resp, err = h.client.Get("http://acm.hust.edu.cn/vjudge/user/checkLogInStatus.action")
+	if err != nil {
+		return "", ErrConnectFailed
+	}
+	b, _ := ioutil.ReadAll(resp.Body)
+	fmt.Println("YT",string(b))
 
     return nil
 }
