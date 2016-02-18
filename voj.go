@@ -136,10 +136,9 @@ func (h *VJJudger) submit(u UserInterface) error {
     source := base64.StdEncoding.EncodeToString([]byte(sd))
 
     uv.Add("language", strconv.Itoa(VJLang[u.GetLang()]))
-    uv.Add("source", source)
     uv.Add("isOpen", 0)
+    uv.Add("source", source)
     uv.Add("id", u.GetVid())
-    uv.Add("submit", "Submit")
 
     req, err := http.NewRequest("POST", "http://acm.hust.edu.cn/vjudge/problem/submit.action", strings.NewReader(uv.Encode()))
     if err != nil {
