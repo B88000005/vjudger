@@ -121,26 +121,18 @@ func (h *VJJudger) Submit(u UserInterface) (err error) {
 func (h *VJJudger) submit(u UserInterface) error {
     log.Println("vj submit")
 
-    uv := url.Values{}
-
     sd := h.FixCode(strconv.Itoa(u.GetSid()), u.GetCode())
     sd = strings.Replace(sd, "\r\n", "\n", -1)
 
     source := base64.StdEncoding.EncodeToString([]byte(sd))
 
-    uv.Add("language", strconv.Itoa(VJLang[u.GetLang()]))
-    uv.Add("isOpen", "0")
-    uv.Add("source", source)
-    uv.Add("id", strconv.Itoa(u.GetVid()))
-
-    req, err := http.NewRequest("POST", "http://acm.hust.edu.cn/vjudge/problem/submit.action", strings.NewReader(uv.Encode()))
-    if err != nil {
-        return BadInternet
-    }
-    req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
     u.SetSubmitTime(time.Now())
-    resp, err := h.client.Do(req)
+    resp, err := h.client.PostForm("http://acm.hust.edu.cn/vjudge/problem/submit.action", url.Values{
+        "language": {strconv.Itoa(VJLang[u.GetLang()])},
+        "isOpen": {0},
+        "source": {source},
+        "id": {u.GetVid()},
+    })
     if err != nil {
         return BadInternet
     }
