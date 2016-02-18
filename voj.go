@@ -104,7 +104,7 @@ func (h *VJJudger) login() error {
 
 // FixCode sets a code id on the top of code
 func (h *VJJudger) FixCode(sid string, code string) string {
-    return "//" + sid + "\n" + code
+    return "//" + sid + "\n12345678901234567890123456789012345678901234567890\n" + code
 }
 
 func (h *VJJudger) Submit(u UserInterface) (err error) {
@@ -129,9 +129,10 @@ func (h *VJJudger) submit(u UserInterface) error {
     u.SetSubmitTime(time.Now())
     resp, err := h.client.PostForm("http://acm.hust.edu.cn/vjudge/problem/submit.action", url.Values{
         "language": {strconv.Itoa(VJLang[u.GetLang()])},
-        "isOpen": {0},
+        "isOpen": {"0"},
         "source": {source},
-        "id": {u.GetVid()},
+        //"id": {strconv.Itoa(u.GetVid())},
+        "id": {"10763"},
     })
     if err != nil {
         return BadInternet
