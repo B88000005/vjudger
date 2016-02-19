@@ -55,8 +55,7 @@ var VJRes = map[string]int{
     "Output Limit Exceed":   8,
     "Output Limit Exceeded": 8,
     "Presentation Error":    5,
-    "Submit Failed":         10
-}
+    "Submit Failed":         10}
 
 var VJLang = map[int]int{
     LanguageNA:   -1,
