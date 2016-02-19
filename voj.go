@@ -66,7 +66,7 @@ var VJLang = map[int]int{
 
 func (h *VJJudger) Init(_ UserInterface) error {
     jar, _ := cookiejar.New(nil)
-    h.client = &http.Client{Jar: jar, Timeout: time.Second * 30}
+    h.client = &http.Client{Jar: jar}
     h.token = VJToken
     h.username = "vsake"
     h.userpass = "JC945312"
@@ -247,13 +247,13 @@ func (h *VJJudger) GetCodeID(rid string) string {
 }
 
 func (h *VJJudger) GetCEInfo(rid string) (string, error) {
-    resp, err := h.client.Get("http://poj.org/showcompileinfo?solution_id=" + rid)
+    resp, err := h.client.Get("http://acm.hust.edu.cn/vjudge/problem/fetchSubmissionInfo.action?id=" + rid)
     if err != nil {
         return "", BadInternet
     }
 
     b, _ := ioutil.ReadAll(resp.Body)
-    pre := `(?s)<pre>(.*?)</pre>`
+    pre := `(?s)"<pre>(.*?)"`
     re := regexp.MustCompile(pre)
     match := re.FindStringSubmatch(string(b))
     return html.UnescapeString(match[1]), nil
