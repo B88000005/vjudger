@@ -45,9 +45,9 @@ var VJRes = map[string]int{"Waiting": 0,
 
 var VJLang = map[int]int{
     LanguageNA:   -1,
-    LanguageC:    10,
-    LanguageCPP:  42,
-    LanguageJAVA: 36}
+    LanguageC:    1,
+    LanguageCPP:  0,
+    LanguageJAVA: 2}
 
 func (h *VJJudger) Init(_ UserInterface) error {
     jar, _ := cookiejar.New(nil)
@@ -84,8 +84,8 @@ func (h *VJJudger) login() error {
     log.Println("vj login")
 
     resp, err := h.client.PostForm("http://acm.hust.edu.cn/vjudge/user/login.action", url.Values{
-        "username": {"vsake"},
-        "password": {"JC945312"},
+        "username": {h.username},
+        "password": {h.userpass},
     })
     if err != nil {
         return BadInternet
@@ -103,8 +103,9 @@ func (h *VJJudger) login() error {
 }
 
 // FixCode sets a code id on the top of code
+// Need to more than 50 chars
 func (h *VJJudger) FixCode(sid string, code string) string {
-    return "//" + sid + "\n12345678901234567890123456789012345678901234567890\n" + code
+    return "//" + sid + "\n//12345678901234567890123456789012345678901234567890\n" + code
 }
 
 func (h *VJJudger) Submit(u UserInterface) (err error) {
@@ -131,8 +132,7 @@ func (h *VJJudger) submit(u UserInterface) error {
         "language": {strconv.Itoa(VJLang[u.GetLang()])},
         "isOpen": {"0"},
         "source": {source},
-        //"id": {strconv.Itoa(u.GetVid())},
-        "id": {"10763"},
+        "id": {strconv.Itoa(u.GetVid())},
     })
     if err != nil {
         return BadInternet
@@ -143,11 +143,11 @@ func (h *VJJudger) submit(u UserInterface) error {
     html := string(b)
 
     // log.Println(html)
-    if strings.Index(html, "No such problem") >= 0 {
+    if strings.Index(html, "Virtual Judge is not a real online judge.") >= 0 {
         log.Println(NoSuchProblem)
         return NoSuchProblem
     }
-    if strings.Index(html, "Source code too long or too short,submit FAILED;") >= 0 {
+    if strings.Index(html, "Source code should be longer than 50 characters!") >= 0 {
         log.Println(SubmitFailed)
 
         return SubmitFailed
@@ -176,13 +176,22 @@ func (h *VJJudger) GetStatus(u UserInterface) error {
         if time.Now().After(endTime) {
             return BadStatus
         }
-        resp, err := h.client.Get(statusUrl)
+        resp, err := h.client.PostForm("http://acm.hust.edu.cn/vjudge/problem/fetchStatus.action", url.Values{
+            "start": {"0"},
+            "length": {"100"},
+            "orderBy": {"run_id"},
+            "un": {h.username},
+            "draw": {"3"},
+            "probNum": {""},
+        })
         if err != nil {
             return BadInternet
         }
         defer resp.Body.Close()
 
         b, _ := ioutil.ReadAll(resp.Body)
+        fmt.Println("BBB: ",string(b))
+        return nil
         AllStatus := h.pat.FindAllStringSubmatch(string(b), -1)
 
         for i := 0; i < len(AllStatus); i++ {
