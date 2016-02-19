@@ -108,7 +108,7 @@ func (h *VJJudger) login() error {
 		return BadInternet
 	}
 	b, _ := ioutil.ReadAll(resp.Body)
-	if string(b) != "true" {
+	if string(b) != "\"true\"" {
         return BadInternet
     }
     return nil
