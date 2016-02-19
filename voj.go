@@ -241,6 +241,9 @@ func (h *VJJudger) GetCodeID(rid string) string {
     pre := `(?s)<pre.*?>(.*?)</pre>`
     re := regexp.MustCompile(pre)
     match := re.FindStringSubmatch(string(b))
+    if len(match) <=1 {
+        return ""
+    }
     code := html.UnescapeString(match[1])
     split := strings.Split(code, "\n")
     return strings.TrimPrefix(split[0], "//")
