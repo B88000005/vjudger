@@ -14,6 +14,7 @@ import (
     "strings"
     "time"
     "encoding/json"
+    "fmt"
 )
 
 type VJJudger struct {
@@ -57,11 +58,12 @@ var VJRes = map[string]int{
     "Presentation Error":    5,
     "Submit Failed":         10}
 
+// only for CF
 var VJLang = map[int]int{
     LanguageNA:   -1,
-    LanguageC:    1,
-    LanguageCPP:  0,
-    LanguageJAVA: 2}
+    LanguageC:    10,
+    LanguageCPP:  42,
+    LanguageJAVA: 36}
 
 func (h *VJJudger) Init(_ UserInterface) error {
     jar, _ := cookiejar.New(nil)
