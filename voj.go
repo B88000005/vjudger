@@ -19,20 +19,34 @@ import (
 type VJJudger struct {
     client   *http.Client
     token    string
-    pat      *regexp.Regexp
     username string
     userpass string
 }
 
+type VJStatus struct {
+    Data [][]interface{}
+    Draw,RecordsFiltered,RecordsTotal int
+}
+
 const VJToken = "VJ"
 
-var VJRes = map[string]int{"Waiting": 0,
-    "Pending":               1,
+var VJRes = map[string]int{
+    "Wait":                  0,
+    "Queue":                 0,
+    "Queuing":               0,
+    "Pending":               0,
+    "Submitted":             0,
     "Compiling":             1,
     "Running":               1,
+    "Judging":               1,
+    "Judging...":            1,
+    "ing":                   1,
+    "Compile Error":         2,
     "Compilation Error":     2,
     "Accepted":              3,
     "Runtime Error":         4,
+    "Floating Point Error":  4,
+    "Crash":                 4,
     "Wrong Answer":          5,
     "Time Limit Exceed":     6,
     "Time Limit Exceeded":   6,
@@ -41,7 +55,8 @@ var VJRes = map[string]int{"Waiting": 0,
     "Output Limit Exceed":   8,
     "Output Limit Exceeded": 8,
     "Presentation Error":    5,
-    "Submit Failed":         10}
+    "Submit Failed":         10
+}
 
 var VJLang = map[int]int{
     LanguageNA:   -1,
@@ -53,9 +68,6 @@ func (h *VJJudger) Init(_ UserInterface) error {
     jar, _ := cookiejar.New(nil)
     h.client = &http.Client{Jar: jar, Timeout: time.Second * 30}
     h.token = VJToken
-    pattern := `<tr align=center><td>(\d+)</td><td><a href=userstatus\?user_id=vsake>vsake</a></td><td>.*?<font color=.*?>(.*?)</font>.*?</td><td>(.*?)</td><td>(.*?)</td><td><a href=showsource\?solution_id=\d+ target=_blank>.*?</a></td><td>(\d+)B</td><td>(.*?)</td></tr>`
-    //runid - result - memory - time - code_length - submit time
-    h.pat = regexp.MustCompile(pattern)
     h.username = "vsake"
     h.userpass = "JC945312"
     return nil
@@ -165,11 +177,6 @@ func (h *VJJudger) GetStatus(u UserInterface) error {
 
     log.Println("fetch status")
 
-    statusUrl := "http://poj.org/status?problem_id=" +
-        strconv.Itoa(u.GetVid()) + "&user_id=" +
-        h.username + "&result=&language=" +
-        strconv.Itoa(VJLang[u.GetLang()])
-
     endTime := time.Now().Add(MAX_WaitTime * time.Second)
 
     for true {
@@ -190,18 +197,17 @@ func (h *VJJudger) GetStatus(u UserInterface) error {
         defer resp.Body.Close()
 
         b, _ := ioutil.ReadAll(resp.Body)
-        fmt.Println("BBB: ",string(b))
-        return nil
-        AllStatus := h.pat.FindAllStringSubmatch(string(b), -1)
+        var AllStatus VJStatus
+        json.Unmarshal([]byte(string(b)), &AllStatus)
 
-        for i := 0; i < len(AllStatus); i++ {
-            status := AllStatus[i]
+        for i := 0; i < len(AllStatus.Data); i++ {
+            status := AllStatus.Data[i]
 
-            rid := status[1] //remote server run id
+            rid := int(status[0].(float64)) //remote server run id
 
             //although it uses more time to get id, but it should work fine:)
             if h.GetCodeID(rid) == strconv.Itoa(u.GetSid()) {
-                u.SetResult(VJRes[status[2]])
+                u.SetResult(VJRes[status[3]])
                 Time, Mem := 0, 0
                 if u.GetResult() > JudgeRJ {
                     if u.GetResult() == JudgeCE {
@@ -211,10 +217,10 @@ func (h *VJJudger) GetStatus(u UserInterface) error {
                         }
                         u.SetErrorInfo(CE)
                     } else if u.GetResult() == JudgeAC {
-                        Time, _ = strconv.Atoi(status[4][:len(status[4])-2])
-                        Mem, _ = strconv.Atoi(status[3][:len(status[3])-1])
+                        Time, _ = strconv.Atoi(int(status[5].(float64)))
+                        Mem, _ = strconv.Atoi(int(status[4].(float64)))
                     }
-                    u.SetResource(Time, Mem, len([]byte(u.GetCode())))
+                    u.SetResource(Time, Mem, int(status[7].(float64)))
                     return nil
                 }
             }
@@ -225,7 +231,7 @@ func (h *VJJudger) GetStatus(u UserInterface) error {
 }
 
 func (h *VJJudger) GetCodeID(rid string) string {
-    resp, err := h.client.Get("http://poj.org/showsource?solution_id=" + rid)
+    resp, err := h.client.Get("http://acm.hust.edu.cn/vjudge/problem/viewSource.action?id=" + rid)
     if err != nil {
         return ""
     }
