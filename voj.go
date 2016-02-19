@@ -13,7 +13,6 @@ import (
     "strconv"
     "strings"
     "time"
-    "fmt"
     "encoding/json"
 )
 
@@ -109,8 +108,9 @@ func (h *VJJudger) login() error {
 		return BadInternet
 	}
 	b, _ := ioutil.ReadAll(resp.Body)
-	fmt.Println("YT",string(b))
-
+	if string(b) != "true" {
+        return BadInternet
+    }
     return nil
 }
 
@@ -256,6 +256,9 @@ func (h *VJJudger) GetCEInfo(rid string) (string, error) {
     pre := `(?s)"<pre>(.*?)"`
     re := regexp.MustCompile(pre)
     match := re.FindStringSubmatch(string(b))
+    if len(match) <=1 {
+        return "", BadInternet
+    }
     return html.UnescapeString(match[1]), nil
 }
 
