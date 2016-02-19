@@ -207,7 +207,7 @@ func (h *VJJudger) GetStatus(u UserInterface) error {
 
             //although it uses more time to get id, but it should work fine:)
             if h.GetCodeID(rid) == strconv.Itoa(u.GetSid()) {
-                u.SetResult(VJRes[status[3]].(string))
+                u.SetResult(VJRes[status[3].(string)])
                 Time, Mem := 0, 0
                 if u.GetResult() > JudgeRJ {
                     if u.GetResult() == JudgeCE {
@@ -217,8 +217,8 @@ func (h *VJJudger) GetStatus(u UserInterface) error {
                         }
                         u.SetErrorInfo(CE)
                     } else if u.GetResult() == JudgeAC {
-                        Time, _ = int(status[5].(float64))
-                        Mem, _ = int(status[4].(float64))
+                        Time = int(status[5].(float64))
+                        Mem = int(status[4].(float64))
                     }
                     u.SetResource(Time, Mem, int(status[7].(float64)))
                     return nil
