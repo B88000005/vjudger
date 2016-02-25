@@ -14,7 +14,6 @@ import (
     "strings"
     "time"
     "encoding/json"
-    "fmt"
 )
 
 type VJJudger struct {
